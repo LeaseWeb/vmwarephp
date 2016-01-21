@@ -1,5 +1,5 @@
 {
-	"name":"vmwarephp/vmwarephp",
+	"name":"leaseweb/vmware-php-sdk",
 	"type":"library",
 	"description":"Vmware vSphere bindings for PHP",
 	"keywords":["vmware", "php", "vsphere", "bindings", "vsphere sdk", "vmware php"],
@@ -19,6 +19,9 @@
 		"mockery/mockery":"dev-master"
 	},
         "autoload": {
-            "psr-0": { "Vmwarephp": "library" }
+            "psr-0": { "Vmwarephp": "library" },
+            "classmap": [
+                "library"
+            ]
         }
 }
