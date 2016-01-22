@@ -46,23 +46,26 @@ obtain server side ManagedObjects. The following example describes a way to coll
 with their config status prefetched:
     
     $vhost = new \Vmwarephp\Vhost('vcenter:443', 'Admin', 'password');
-    $virtualMachines = $vhost->findAllManagedObjects('VirtualMachine', array('configStatus'));
+    $service = $vhost->getService();
+    $virtualMachines = $service->findAllManagedObjects('VirtualMachine', ['configStatus']);
 
 For collecting all virtual machines with all their properties pre-fetched, which normally is a very expensive operation
 considering that a lot of objects need to be traversed you can do it in the following way:
 
-    $virtualMachines = $vhost->findAllManagedObjects('VirtualMachine', 'all');
+    $virtualMachines = $service->findAllManagedObjects('VirtualMachine', 'all');
 
 You can find a given object using its server side id. For example finding a datastore with id datastore-182 with none of
 its properties prefetched:
 
     $vhost = new \Vmwarephp\Vhost('vcenter:443', 'Admin', 'password');
-    $datastore = $vhost->findOneManagedObject('Datastore', 'datastore-182', array());
+    $service = $vhost->getService();
+    $datastore = $service->findOneManagedObject('Datastore', 'datastore-182', []);
 
-A managed object can also be found by name:
+A managed object can also be found by 1st level attributes:
 
-	$vhost = new \Vmwarephp\Vhost('vcenter:443', 'Admin', 'password');
-    $datastore = $vhost->findManagedObjectByName('VirtualMachine', 'myvmname', array('configStatus'));
+    $vhost = new \Vmwarephp\Vhost('vcenter:443', 'Admin', 'password');
+    $service = $vhost->getService();
+    $datastore = $service->findManagedObjectByAttributes('VirtualMachine', ['name' => 'myvmname'], ['configStatus']);
     
 Managed objects can be a generic managed object represented by \Vmwarephp\ManagedObject or a user defined extension of a
 managed object defined in Extensions directory. Each managed object depending on its managed object reference type ('VirtualMachine',
@@ -70,22 +73,23 @@ managed object defined in Extensions directory. Each managed object depending on
 virtual machine snapshot can be as easy as:
 
     $vhost = new \Vmwarephp\Vhost('vcenter:443', 'Admin', 'password');
-    $virtualMachine = $vhost->findOneManagedObject('VirtualMachine', 'vm-192', array());
-    $snapshotTask = $virtualMachine->CreateSnapshot_Task(array('name' => 'snapshot_name', 'memory' => false, 'quiesce' => false));
+    $service = $vhost->getService();
+    $virtualMachine = $service->findOneManagedObject('VirtualMachine', 'vm-192', []);
+    $snapshotTask = $virtualMachine->CreateSnapshot_Task(['name' => 'snapshot_name', 'memory' => false, 'quiesce' => false]);
     
 or considering that the VirtualMachine managed object type has a built in extension already:
 
-    $snapshotTask = $virtualMachine->takeSnapshot(array('name' => 'snapshot_name', 'memory' => false, 'quiesce' => false));
+    $snapshotTask = $virtualMachine->takeSnapshot(['name' => 'snapshot_name', 'memory' => false, 'quiesce' => false]);
     
 All managed object properties are defined as object accessors. You can pre-fetch all accessors when looking for the object or 
 you can query an object property on the fly (note that we are not pre-fetching the configStatus property):
 
-    $virtualMachine = $vhost->findOneManagedObject('VirtualMachine', 'vm-192', array());
+    $virtualMachine = $service->findOneManagedObject('VirtualMachine', 'vm-192', []);
     $configStatus = $virtualMachine->configStatus;
     
 Or prefetching the configStatus:
     
-    $virtualMachine = $vhost->findOneManagedObject('VirtualMachine', 'vm-192', array('configStatus'));
+    $virtualMachine = $service->findOneManagedObject('VirtualMachine', 'vm-192', ['configStatus']);
     
 As you can see working with managed objects is extremely easy. Each method supported by a managed object on the server side
 is mapped to a method on \Vmwarephp\ManagedObject or an extension. Properties are exposed as simple accessor methods. All data
