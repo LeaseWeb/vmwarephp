@@ -1,10 +1,11 @@
 <?php
 error_reporting(E_ALL | E_STRICT);
 
-function includeProjectInPath() {
-    $root    = realpath(dirname(__FILE__));
+function includeProjectInPath()
+{
+    $root = realpath(dirname(__FILE__));
     $library = "$root/library";
-    $tests   = "$root/tests";
+    $tests = "$root/tests";
 
     $path = array(
         $library,
@@ -14,7 +15,8 @@ function includeProjectInPath() {
     set_include_path(implode(PATH_SEPARATOR, $path));
 }
 
-function loadMockery() {
+function loadMockery()
+{
     require_once 'Mockery/Loader.php';
     require_once 'Hamcrest/Hamcrest.php';
 
@@ -22,7 +24,8 @@ function loadMockery() {
     $loader->register();
 }
 
-function enableProjectClassAutoloader() {
+function enableProjectClassAutoloader()
+{
     require_once 'Vmwarephp/Autoloader.php';
     $autoloader = new \Vmwarephp\Autoloader;
     $autoloader->register();
