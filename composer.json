@@ -1,5 +1,5 @@
 {
-    "name":"LeaseWeb/vmwarephp",
+    "name":"leaseweb/vmware-php-sdk",
     "type":"library",
     "description":"Vmware vSphere bindings for PHP",
     "keywords":["vmware", "php", "vsphere", "bindings", "vsphere sdk", "vmware php"],
