@@ -2,6 +2,15 @@
 
 namespace Vmwarephp;
 
+use \Vmwarephp\Factory\SoapClient;
+use \Vmwarephp\Factory\SoapMessage;
+use \Vmwarephp\Exception\Soap as SoapException;
+
+/**
+ * Class Service
+ * @package Vmwarephp
+ * @method Extensions\PropertyCollector getPropertyCollector()
+ */
 class Service
 {
     private $soapClient;
@@ -11,55 +20,75 @@ class Service
     private $session;
     private $clientFactory;
 
-    function __construct(Vhost $vhost, \Vmwarephp\Factory\SoapClient $soapClientFactory = null)
+    /**
+     * Service constructor.
+     *
+     * @param Vhost           $vhost
+     * @param SoapClient|null $soapClientFactory
+     */
+    public function __construct(Vhost $vhost, SoapClient $soapClientFactory = null)
     {
         $this->vhost = $vhost;
-        $this->clientFactory = $soapClientFactory ?: new \Vmwarephp\Factory\SoapClient();
+        $this->clientFactory = $soapClientFactory ?: new SoapClient();
         $this->soapClient = $this->clientFactory->make($this->vhost);
         $this->typeConverter = new TypeConverter($this);
     }
 
-    function __call($method, $arguments)
+    /**
+     * @param $method
+     * @param $arguments
+     *
+     * @return null
+     * @throws Exception\Soap
+     */
+    public function __call($method, $arguments)
     {
         if ($this->isMethodAPropertyRetrieval($method)) {
             return $this->getQueriedProperty($method, $arguments);
         }
         $managedObject = $arguments[0];
-        $actionArguments = isset($arguments[1]) ? $arguments[1] : array();
+        $actionArguments = isset($arguments[1]) ? $arguments[1] : [];
         return $this->makeSoapCall(
             $method,
-            \Vmwarephp\Factory\SoapMessage::makeUsingManagedObject($managedObject, $actionArguments)
+            SoapMessage::makeUsingManagedObject($managedObject, $actionArguments)
         );
     }
 
-    function findAllManagedObjects($objectType, $propertiesToCollect)
+    /**
+     * @param $objectType
+     * @param $propertiesToCollect
+     *
+     * @return mixed
+     */
+    public function findAllManagedObjects($objectType, $propertiesToCollect)
     {
         $propertyCollector = $this->getPropertyCollector();
         return $propertyCollector->collectAll($objectType, $propertiesToCollect);
     }
 
-    function findOneManagedObject($objectType, $referenceId, $propertiesToCollect)
+    /**
+     * @param $objectType
+     * @param $referenceId
+     * @param $propertiesToCollect
+     *
+     * @return mixed
+     */
+    public function findOneManagedObject($objectType, $referenceId, $propertiesToCollect)
     {
         $propertyCollector = $this->getPropertyCollector();
         return $propertyCollector->collectPropertiesFor($objectType, $referenceId, $propertiesToCollect);
     }
 
-    function findManagedObjectByName($objectType, $name, $propertiesToCollect = array())
+    /**
+     * todo: accept multi-level attributes (ie config->allocatedMemory->limit)
+     * @param       $objectType
+     * @param       $attributes
+     * @param array $propertiesToCollect
+     *
+     * @return array
+     */
+    public function findManagedObjectByAttributes($objectType, $attributes, $propertiesToCollect = [])
     {
-        $propertiesToCollect = array_merge($propertiesToCollect, array('name'));
-        $allObjects = $this->findAllManagedObjects($objectType, $propertiesToCollect);
-        $objects = array_filter(
-            $allObjects,
-            function ($object) use ($name) {
-                return $object->name == $name;
-            }
-        );
-        return empty($objects) ? null : end($objects);
-    }
-
-    function findManagedObjectByAttributes($objectType, $attributes, $propertiesToCollect = array())
-    {
-        $propertiesToCollect = array_merge($propertiesToCollect, array_values($attributes));
         $allObjects = $this->findAllManagedObjects($objectType, $propertiesToCollect);
         $objects = array_filter(
             $allObjects,
@@ -72,10 +101,13 @@ class Service
                 return true;
             }
         );
-        return empty($objects) ? null : end($objects);
+        return $objects;
     }
 
-    function connect()
+    /**
+     * @return mixed
+     */
+    public function connect()
     {
         if ($this->session) {
             return $this->session;
@@ -85,29 +117,44 @@ class Service
         return $this->session;
     }
 
-    function getServiceContent()
+    /**
+     * @return mixed
+     * @throws Exception\Soap
+     */
+    public function getServiceContent()
     {
         if (!$this->serviceContent) {
             $this->serviceContent = $this->makeSoapCall(
                 'RetrieveServiceContent',
-                \Vmwarephp\Factory\SoapMessage::makeForServiceInstance()
+                SoapMessage::makeForServiceInstance()
             );
         }
         return $this->serviceContent;
     }
 
+    /**
+     * @param $response
+     *
+     * @return mixed
+     */
     protected function convertResponse($response)
     {
         $responseVars = get_object_vars($response);
-        if (isset($response->returnval) || (array_key_exists('returnval', $responseVars) && is_null(
-                    $responseVars['returnval']
-                ))
+        if (isset($response->returnval) ||
+            (array_key_exists('returnval', $responseVars) && is_null($responseVars['returnval']))
         ) {
             return $this->typeConverter->convert($response->returnval);
         }
         return $this->typeConverter->convert($response);
     }
 
+    /**
+     * @param $method
+     * @param $soapMessage
+     *
+     * @return mixed
+     * @throws SoapException
+     */
     private function makeSoapCall($method, $soapMessage)
     {
         $this->soapClient->_classmap = $this->clientFactory->getClientClassMap();
@@ -115,12 +162,18 @@ class Service
             $result = $this->soapClient->$method($soapMessage);
         } catch (\SoapFault $soapFault) {
             $this->soapClient->_classmap = null;
-            throw new \Vmwarephp\Exception\Soap($soapFault);
+            throw new SoapException($soapFault);
         }
         $this->soapClient->_classmap = null;
         return $this->convertResponse($result);
     }
 
+    /**
+     * @param $method
+     * @param $arguments
+     *
+     * @return null
+     */
     private function getQueriedProperty($method, $arguments)
     {
         $propertyToRetrieve = $this->generateNameForThePropertyToRetrieve($method);
@@ -132,7 +185,7 @@ class Service
         $foundManagedObject = $this->findOneManagedObject(
             $managedObject->getReferenceType(),
             $managedObject->getReferenceId(),
-            array($propertyToRetrieve)
+            [$propertyToRetrieve]
         );
         if (!isset($foundManagedObject->$propertyToRetrieve)) {
             return null;
@@ -140,11 +193,21 @@ class Service
         return $foundManagedObject->$propertyToRetrieve;
     }
 
+    /**
+     * @param $calledMethod
+     *
+     * @return int
+     */
     private function isMethodAPropertyRetrieval($calledMethod)
     {
         return preg_match('/^get/', $calledMethod);
     }
 
+    /**
+     * @param $calledMethod
+     *
+     * @return string
+     */
     private function generateNameForThePropertyToRetrieve($calledMethod)
     {
         return lcfirst(substr($calledMethod, 3));

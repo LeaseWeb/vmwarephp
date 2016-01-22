@@ -1,13 +1,25 @@
 <?php
 namespace Vmwarephp\Extensions;
 
-class SessionManager extends \Vmwarephp\ManagedObject
+use \Vmwarephp\ManagedObject;
+
+/**
+ * Class SessionManager
+ * @package Vmwarephp\Extensions
+ */
+class SessionManager extends ManagedObject
 {
 
     private $cloneTicketFile;
     private $session;
 
-    function acquireSession($userName, $password)
+    /**
+     * @param $userName
+     * @param $password
+     *
+     * @return mixed
+     */
+    public function acquireSession($userName, $password)
     {
         if ($this->session) {
             return $this->session;
@@ -20,35 +32,55 @@ class SessionManager extends \Vmwarephp\ManagedObject
         return $this->session;
     }
 
+    /**
+     * @return mixed
+     * @throws \Exception
+     */
     private function acquireSessionUsingCloneTicket()
     {
         $cloneTicket = $this->readCloneTicket();
         if (!$cloneTicket) {
             throw new \Exception('Cannot find any clone ticket.');
         }
-        return $this->CloneSession(array('cloneTicket' => $cloneTicket));
+        return $this->CloneSession(['cloneTicket' => $cloneTicket]);
     }
 
+    /**
+     * @param $userName
+     * @param $password
+     *
+     * @return mixed
+     * @throws \Exception
+     */
     private function acquireANewSession($userName, $password)
     {
-        $session = $this->Login(array('userName' => $userName, 'password' => $password, 'locale' => null));
+        $session = $this->Login(['userName' => $userName, 'password' => $password, 'locale' => null]);
         $cloneTicket = $this->AcquireCloneTicket();
         $this->saveCloneTicket($cloneTicket);
         return $session;
     }
 
+    /**
+     * @param $cloneTicket
+     *
+     * @throws \Exception
+     */
     private function saveCloneTicket($cloneTicket)
     {
         if (!file_put_contents($this->getCloneTicketFile(), $cloneTicket)) {
+            $exceptionMessage = sprintf(
+                'There was an error writing to the clone ticket path. Check the permissions of the cache directory(%s)',
+                __DIR__ . '/../'
+            );
             throw new \Exception(
-                sprintf(
-                    'There was an error writing to the clone ticket path. Check the permissions of the cache directory(%s)',
-                    __DIR__ . '/../'
-                )
+                $exceptionMessage
             );
         }
     }
 
+    /**
+     * @return string
+     */
     private function readCloneTicket()
     {
         $ticketFile = $this->getCloneTicketFile();
@@ -57,6 +89,9 @@ class SessionManager extends \Vmwarephp\ManagedObject
         }
     }
 
+    /**
+     * @return string
+     */
     private function getCloneTicketFile()
     {
         if (!$this->cloneTicketFile) {

@@ -1,63 +1,104 @@
 <?php
 namespace Vmwarephp\Extensions;
 
-class VirtualMachine extends \Vmwarephp\ManagedObject
-{
+use \Vmwarephp\ManagedObject;
 
-    function takeSnapshot($name, $memory = null, $quiesce = null, $description = '')
+/**
+ * Class VirtualMachine
+ * @package Vmwarephp\Extensions
+ */
+class VirtualMachine extends ManagedObject
+{
+    /**
+     * @param        $name
+     * @param null   $memory
+     * @param null   $quiesce
+     * @param string $description
+     *
+     * @return mixed
+     */
+    public function takeSnapshot($name, $memory = null, $quiesce = null, $description = '')
     {
         $snapshotTask = $this->CreateSnapshot_Task(
-            array('name' => $name, 'description' => $description, 'memory' => $memory, 'quiesce' => $quiesce)
+            ['name' => $name, 'description' => $description, 'memory' => $memory, 'quiesce' => $quiesce]
         );
         return $snapshotTask;
     }
 
-    function isAccessible()
+    /**
+     * @return bool
+     */
+    public function isAccessible()
     {
-        return in_array($this->configStatus, array('green', 'gray'));
+        return in_array($this->configStatus, ['green', 'gray']);
     }
 
-    function isTemplate()
+    /**
+     * @return mixed
+     */
+    public function isTemplate()
     {
         return $this->summary->config->template;
     }
 
-    function getParentDatastoreName()
+    /**
+     * @return mixed
+     */
+    public function getParentDatastoreName()
     {
         preg_match('/\[(.*)\]/', $this->summary->config->vmPathName, $matches);
         return $matches[1];
     }
 
-    function getParentDatastore()
+    /**
+     * @return mixed
+     */
+    public function getParentDatastore()
     {
         foreach ($this->datastore as $datastore) {
             if ($datastore->name == $this->getParentDatastoreName()) {
                 return $datastore;
             }
         }
+        return null;
     }
 
-    function hasSnapshots()
+    /**
+     * @return bool
+     */
+    public function hasSnapshots()
     {
         return $this->snapshot ? true : false;
     }
 
-    function getUsedSpace()
+    /**
+     * @return mixed
+     */
+    public function getUsedSpace()
     {
         return $this->summary->storage->committed;
     }
 
-    function getProvisionedSpace()
+    /**
+     * @return mixed
+     */
+    public function getProvisionedSpace()
     {
         return $this->summary->storage->committed + $this->summary->storage->uncommitted;
     }
 
-    function getHardware()
+    /**
+     * @return mixed
+     */
+    public function getHardware()
     {
         return $this->config->hardware;
     }
 
-    function getGuestInfo()
+    /**
+     * @return mixed
+     */
+    public function getGuestInfo()
     {
         return $this->guest;
     }

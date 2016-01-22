@@ -3,25 +3,47 @@
 namespace Vmwarephp;
 
 use Vmwarephp\Exception as Ex;
+use \Vmwarephp\Factory\Service as FactoryService;
 
+/**
+ * Class Vhost
+ * @package Vmwarephp
+ */
 class Vhost
 {
+    /** @var Service $service */
     private $service;
 
-    function __construct($host, $username, $password)
+    /**
+     * Vhost constructor.
+     *
+     * @param $host
+     * @param $username
+     * @param $password
+     */
+    public function __construct($host, $username, $password)
     {
         $this->host = $host;
         $this->username = $username;
         $this->password = $password;
+        $this->initializeService();
     }
 
-    function getPort()
+    /**
+     * @return string
+     */
+    public function getPort()
     {
         $port = parse_url($this->host, PHP_URL_PORT);
         return $port ?: '443';
     }
 
-    function __get($propertyName)
+    /**
+     * @param $propertyName
+     *
+     * @return mixed
+     */
+    public function __get($propertyName)
     {
         if (!isset($this->$propertyName)) {
             throw new \InvalidArgumentException('Property ' . $propertyName . ' not set on this object!');
@@ -29,40 +51,61 @@ class Vhost
         return $this->$propertyName;
     }
 
-    function __set($propertyName, $value)
+    /**
+     * @param $propertyName
+     * @param $value
+     *
+     * @throws Ex\InvalidVhost
+     */
+    public function __set($propertyName, $value)
     {
         $this->validateProperty($propertyName, $value);
         $this->$propertyName = $value;
     }
 
-    function __call($method, $arguments)
+    /**
+     * @return Service
+     */
+    public function getService()
     {
-        if (!$this->service) {
-            $this->initializeService();
-        }
-        return call_user_func_array(array($this->service, $method), $arguments);
+        return $this->service;
     }
 
-    function getApiType()
+    /**
+     * @return mixed
+     */
+    public function getApiType()
     {
         return $this->getServiceContent()->about->apiType;
     }
 
-    function changeService(\Vmwarephp\Service $service)
+    /**
+     * @param Service $service
+     */
+    public function changeService(Service $service)
     {
         $this->service = $service;
     }
 
+    /**
+     * Initializes vmware service
+     */
     private function initializeService()
     {
         if (!$this->service) {
-            $this->service = \Vmwarephp\Factory\Service::makeConnected($this);
+            $this->service = FactoryService::makeConnected($this);
         }
     }
 
+    /**
+     * @param $propertyName
+     * @param $value
+     *
+     * @throws Ex\InvalidVhost
+     */
     private function validateProperty($propertyName, $value)
     {
-        if (in_array($propertyName, array('host', 'username', 'password')) && empty($value)) {
+        if (in_array($propertyName, ['host', 'username', 'password']) && empty($value)) {
             throw new Ex\InvalidVhost('Vhost ' . ucfirst($propertyName) . ' cannot be empty!');
         }
     }

@@ -2727,8 +2727,10 @@ class ResourceConfigSpec {
 	public $entity; //ManagedObjectReference
 	public $changeVersion; //string
 	public $lastModified; //dateTime
-	public $cpuAllocation; //ResourceAllocationInfo
-	public $memoryAllocation; //ResourceAllocationInfo
+	/** @var \ResourceAllocationInfo $cpuAllocation */
+	public $cpuAllocation;
+	/** @var \ResourceAllocationInfo $memoryAllocation */
+	public $memoryAllocation;
 
 	function __construct($entity = null, $changeVersion = null, $lastModified = null, $cpuAllocation = null, $memoryAllocation = null) {
 		$this->entity = $entity;

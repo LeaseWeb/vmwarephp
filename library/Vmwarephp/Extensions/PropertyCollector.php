@@ -1,21 +1,41 @@
 <?php
 namespace Vmwarephp\Extensions;
 
-class PropertyCollector extends \Vmwarephp\ManagedObject
-{
+use \Vmwarephp\ManagedObject;
+use \Vmwarephp\Service;
+use \Vmwarephp\Factory\PropertyFilterSpec;
 
+/**
+ * Class PropertyCollector
+ * @package Vmwarephp\Extensions
+ */
+class PropertyCollector extends ManagedObject
+{
     private $propFilterSpecFactory;
 
-    function __construct(
-        \Vmwarephp\Service $vmwareService,
+    /**
+     * PropertyCollector constructor.
+     *
+     * @param Service                 $vmwareService
+     * @param \ManagedObjectReference $managedObjectReference
+     * @param PropertyFilterSpec|null $factory
+     */
+    public function __construct(
+        Service $vmwareService,
         \ManagedObjectReference $managedObjectReference,
-        \Vmwarephp\Factory\PropertyFilterSpec $factory = null
+        PropertyFilterSpec $factory = null
     ) {
         parent::__construct($vmwareService, $managedObjectReference);
-        $this->propFilterSpecFactory = $factory ?: new \Vmwarephp\Factory\PropertyFilterSpec();
+        $this->propFilterSpecFactory = $factory ?: new PropertyFilterSpec();
     }
 
-    function collectAll($managedObjectType, $propertiesToCollect)
+    /**
+     * @param $managedObjectType
+     * @param $propertiesToCollect
+     *
+     * @return array
+     */
+    public function collectAll($managedObjectType, $propertiesToCollect)
     {
         $propertyFilterSpec = $this->propFilterSpecFactory->makeForTraversingAllInventory(
             $managedObjectType,
@@ -24,12 +44,19 @@ class PropertyCollector extends \Vmwarephp\ManagedObject
         );
         $managedObjects = $this->getPropertiesUsingSpec($propertyFilterSpec);
         if (!$managedObjects) {
-            return array();
+            return [];
         }
-        return is_array($managedObjects) ? $managedObjects : array($managedObjects);
+        return is_array($managedObjects) ? $managedObjects : [$managedObjects];
     }
 
-    function collectPropertiesFor($managedObjectType, $referenceId, $propertiesToCollect)
+    /**
+     * @param $managedObjectType
+     * @param $referenceId
+     * @param $propertiesToCollect
+     *
+     * @return null
+     */
+    public function collectPropertiesFor($managedObjectType, $referenceId, $propertiesToCollect)
     {
         $propertyFilterSpec = $this->propFilterSpecFactory->makeForOneManagedObject(
             $managedObjectType,
@@ -40,40 +67,61 @@ class PropertyCollector extends \Vmwarephp\ManagedObject
         return $this->appendTraversedPropertiesToRequestedObject($result, $propertiesToCollect, $managedObjectType);
     }
 
-    private function getPropertiesUsingSpec($propertyFilterSpec, $options = array())
+    /**
+     * @param       $propertyFilterSpec
+     * @param array $options
+     *
+     * @return mixed
+     */
+    private function getPropertiesUsingSpec($propertyFilterSpec, $options = [])
     {
-        return $this->RetrieveProperties(array('specSet' => $propertyFilterSpec, 'options' => $options));
+        return $this->RetrieveProperties(['specSet' => $propertyFilterSpec, 'options' => $options]);
     }
 
+    /**
+     * @param $collectionResult
+     * @param $propertiesToCollect
+     * @param $managedObjectType
+     *
+     * @return null
+     * @throws \Exception
+     */
     private function appendTraversedPropertiesToRequestedObject(
         $collectionResult,
         $propertiesToCollect,
         $managedObjectType
     ) {
         if (!$collectionResult) {
-            return;
+            return null;
         }
         $hashedCollectionResult = $this->collectionResultToHash($collectionResult);
         $requestedObject = $this->findRequestedObjectInCollectionResult($collectionResult, $managedObjectType);
         $propertiesToCollect = is_array($propertiesToCollect) ? $propertiesToCollect : array($propertiesToCollect);
         foreach ($propertiesToCollect as $key => $value) {
             if ($this->isATraversalProperty($key)) {
-                $requestedObject->$key = isset($hashedCollectionResult[$value[0]]) ? $hashedCollectionResult[$value[0]] : null;
+                $requestedObject->$key = isset($hashedCollectionResult[$value[0]]) ?
+                    $hashedCollectionResult[$value[0]] :
+                    null;
             }
         }
         return $requestedObject;
     }
 
+    /**
+     * @param $collectionResult
+     * @param $managedObjectType
+     *
+     * @return mixed
+     * @throws \Exception
+     */
     private function findRequestedObjectInCollectionResult($collectionResult, $managedObjectType)
     {
         if (is_object($collectionResult)) {
             return $collectionResult;
         }
         foreach ($collectionResult as $managedObject) {
-            if (strpos(
-                    get_class($managedObject),
-                    $managedObjectType
-                ) !== false || $managedObject->reference->type === $managedObjectType
+            if (strpos(get_class($managedObject), $managedObjectType) !== false ||
+                $managedObject->reference->type === $managedObjectType
             ) {
                 return $managedObject;
             }
@@ -81,9 +129,14 @@ class PropertyCollector extends \Vmwarephp\ManagedObject
         throw new \Exception('Cannot find the object we requested to collect the properties for in servers response!');
     }
 
+    /**
+     * @param $collectionResult
+     *
+     * @return array
+     */
     private function collectionResultToHash($collectionResult)
     {
-        $hash = array();
+        $hash = [];
         if (!is_array($collectionResult)) {
             return $hash;
         }
@@ -93,6 +146,11 @@ class PropertyCollector extends \Vmwarephp\ManagedObject
         return $hash;
     }
 
+    /**
+     * @param $propertyKey
+     *
+     * @return bool
+     */
     private function isATraversalProperty($propertyKey)
     {
         return !is_numeric($propertyKey);

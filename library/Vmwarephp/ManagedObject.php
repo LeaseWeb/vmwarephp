@@ -1,48 +1,104 @@
 <?php
 namespace Vmwarephp;
 
-class ManagedObject {
-	private $reference;
-	protected $vmwareService;
+/**
+ * Class ManagedObject
+ * @package Vmwarephp
+ */
+class ManagedObject
+{
+    /** @var \ManagedObjectReference $reference */
+    private $reference;
 
-	function __construct(Service $vmwareService, \ManagedObjectReference $managedObjectReference) {
-		$this->vmwareService = $vmwareService;
-		$this->reference = $managedObjectReference;
-	}
+    /** @var Service $vmwareService */
+    protected $vmwareService;
 
-	function getParentHost() {
-		return $this->vmwareService->getVhostHost();
-	}
+    /**
+     * ManagedObject constructor.
+     *
+     * @param Service                 $vmwareService
+     * @param \ManagedObjectReference $managedObjectReference
+     */
+    public function __construct(Service $vmwareService, \ManagedObjectReference $managedObjectReference)
+    {
+        $this->vmwareService = $vmwareService;
+        $this->reference = $managedObjectReference;
+    }
 
-	function __get($propertyName) {
-		if (!isset($this->$propertyName)) {
-			$queryForProperty = 'get' . ucfirst($propertyName);
-			return $this->$queryForProperty();
-		}
-		return $this->$propertyName;
-	}
+    /**
+     * @return mixed
+     */
+    public function getParentHost()
+    {
+        return $this->vmwareService->getVhostHost();
+    }
 
-	function __set($propertyName, $propertyValue) {
-		$this->$propertyName = $propertyValue;
-	}
+    /**
+     * @param $propertyName
+     *
+     * @return mixed
+     */
+    public function __get($propertyName)
+    {
+        if (!isset($this->$propertyName)) {
+            $queryForProperty = 'get' . ucfirst($propertyName);
+            return $this->$queryForProperty();
+        }
+        return $this->$propertyName;
+    }
 
-	function getReferenceType() {
-		return $this->reference->type;
-	}
+    /**
+     * @param $propertyName
+     * @param $propertyValue
+     */
+    public function __set($propertyName, $propertyValue)
+    {
+        $this->$propertyName = $propertyValue;
+    }
 
-	function getReferenceId() {
-		return $this->reference->_;
-	}
+    /**
+     * @return null
+     */
+    public function getReferenceType()
+    {
+        return $this->reference->type;
+    }
 
-	function toReference() {
-		return $this->reference;
-	}
+    /**
+     * @return null
+     */
+    public function getReferenceId()
+    {
+        return $this->reference->_;
+    }
 
-	function __call($method, $arguments) {
-		return $this->vmwareService->$method($this, $arguments);
-	}
+    /**
+     * @return \ManagedObjectReference
+     */
+    public function toReference()
+    {
+        return $this->reference;
+    }
 
-	function equals(ManagedObject $managedObject) {
-		return $this->toReference() == $managedObject->toReference() && $this->getParentHost() == $managedObject->getParentHost();
-	}
+    /**
+     * @param $method
+     * @param $arguments
+     *
+     * @return mixed
+     */
+    public function __call($method, $arguments)
+    {
+        return $this->vmwareService->$method($this, $arguments);
+    }
+
+    /**
+     * @param ManagedObject $managedObject
+     *
+     * @return bool
+     */
+    public function equals(ManagedObject $managedObject)
+    {
+        return ($this->toReference() == $managedObject->toReference() &&
+            $this->getParentHost() == $managedObject->getParentHost());
+    }
 }

@@ -1,12 +1,20 @@
 <?php
 namespace Vmwarephp\Extensions;
 
-class Datastore extends \Vmwarephp\ManagedObject
-{
+use \Vmwarephp\ManagedObject;
 
-    function getConnectedHosts()
+/**
+ * Class Datastore
+ * @package Vmwarephp\Extensions
+ */
+class Datastore extends ManagedObject
+{
+    /**
+     * @return array
+     */
+    public function getConnectedHosts()
     {
-        $hosts = array();
+        $hosts = [];
         foreach ($this->host as $hostMount) {
             if ($hostMount) {
                 $hosts[] = $hostMount->key;
@@ -15,10 +23,13 @@ class Datastore extends \Vmwarephp\ManagedObject
         return $hosts;
     }
 
-    function getVirtualMachinesReferencingThisDatastore()
+    /**
+     * @return array
+     */
+    public function getVirtualMachinesReferencingThisDatastore()
     {
         if (!$this->vm[0]) {
-            return array();
+            return [];
         }
         return array_filter(
             $this->vm,
@@ -28,9 +39,12 @@ class Datastore extends \Vmwarephp\ManagedObject
         );
     }
 
-    function getVirtualMachinesInstalledOnThisDatastore()
+    /**
+     * @return array
+     */
+    public function getVirtualMachinesInstalledOnThisDatastore()
     {
-        $vms = array();
+        $vms = [];
         foreach ($this->getVirtualMachinesReferencingThisDatastore() as $vm) {
             if ($vm->getParentDatastoreName() == $this->name) {
                 $vms[] = $vm;
@@ -39,8 +53,11 @@ class Datastore extends \Vmwarephp\ManagedObject
         return $vms;
     }
 
-    function isAccessible()
+    /**
+     * @return bool
+     */
+    public function isAccessible()
     {
-        return in_array($this->configStatus, array('green', 'gray'));
+        return in_array($this->configStatus, ['green', 'gray']);
     }
 }

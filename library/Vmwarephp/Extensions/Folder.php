@@ -1,12 +1,20 @@
 <?php
 namespace Vmwarephp\Extensions;
 
-class Folder extends \Vmwarephp\ManagedObject
+use \Vmwarephp\ManagedObject;
+
+/**
+ * Class Folder
+ * @package Vmwarephp\Extensions
+ */
+class Folder extends ManagedObject
 {
     /**
-     * @param $type   The type of ManagedObject to find
-     * @param $name   The name of the ManagedObject to find
-     * @param $create Whether or not to create a folder with the name $name if it doesn't exist.
+     * @param $type   string The type of ManagedObject to find
+     * @param $name   string The name of the ManagedObject to find
+     * @param $create bool   Whether or not to create a folder with the name $name if it doesn't exist.
+     * @return bool
+     * @throws \Exception
      */
     public function getChild($type = '', $name = '', $create = false)
     {
@@ -26,19 +34,24 @@ class Folder extends \Vmwarephp\ManagedObject
         }
 
         if ($create && $type === 'Folder') {
-            return $this->createFolder(array('name' => $name));
+            return $this->createFolder(['name' => $name]);
         }
 
         return false;
     }
 
+    /**
+     * @param string $type
+     *
+     * @return array|mixed
+     */
     public function getChildren($type = '')
     {
         if (!$type) {
             return $this->childEntity;
         }
 
-        $children = array();
+        $children = [];
 
         foreach ($this->childEntity as $child) {
             if (!is_object($child)) {
@@ -53,8 +66,11 @@ class Folder extends \Vmwarephp\ManagedObject
     }
 
     /**
-     * @param $path   A folder path delimited with '/' like Folder1/Folder2/etc which would attempt to find Folder1 as a child of this Folder, Folder2 as a child of Folder1, etc as a child of Folder2.
-     * @param $create Whether or not to create the folders described by the path if they don't exist.
+     * @param $path   string A folder path delimited with '/' like Folder1/Folder2/etc which would attempt to find
+     *                Folder1 as a child of this Folder, Folder2 as a child of Folder1, etc as a child of Folder2.
+     * @param $create bool   Whether or not to create the folders described by the path if they don't exist.
+     * @return bool
+     * @throws \Exception
      */
     public function getFolderByPath($path = '', $create = false)
     {
@@ -73,7 +89,7 @@ class Folder extends \Vmwarephp\ManagedObject
         $childFolder = $this->getChild('Folder', $name);
         if (!$childFolder) {
             if ($create) {
-                $childFolder = $this->createFolder(array('name' => $name));
+                $childFolder = $this->createFolder(['name' => $name]);
             } else {
                 return false;
             }
