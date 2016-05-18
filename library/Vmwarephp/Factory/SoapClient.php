@@ -39,7 +39,7 @@ class SoapClient
     {
         $context = stream_context_create([
             'ssl' => [
-                'verify_peer' => true,
+                'verify_peer' => false,
                 'verify_peer_name' => false,
                 'allow_self_signed' => false
             ]
